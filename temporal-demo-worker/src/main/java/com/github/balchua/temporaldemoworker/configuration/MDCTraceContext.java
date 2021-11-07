@@ -7,7 +7,7 @@ import org.slf4j.MDC;
 
 import java.math.BigInteger;
 
-public class TestCurrentTraceContext extends CurrentTraceContext {
+public class MDCTraceContext extends CurrentTraceContext {
     @Override
     public TraceContext get() {
         String traceId = MDC.get("traceId");

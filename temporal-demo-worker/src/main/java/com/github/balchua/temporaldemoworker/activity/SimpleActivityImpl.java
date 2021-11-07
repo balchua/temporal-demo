@@ -82,9 +82,8 @@ public class SimpleActivityImpl implements SimpleActivity {
     public String grpcCall(String arg) {
         log.info("calling grpc");
         Metadata b3Headers = addB3GrpcHeaders();
-        GreeterGrpc.GreeterBlockingStub stubWithHeaders;
-        stubWithHeaders = MetadataUtils.attachHeaders(blockingStub, b3Headers);
-        HelloReply reply = stubWithHeaders.sayHello(HelloRequest.newBuilder().setName(arg).build());
+        blockingStub.withInterceptors(MetadataUtils.newAttachHeadersInterceptor(b3Headers));
+        HelloReply reply = blockingStub.sayHello(HelloRequest.newBuilder().setName(arg).build());
         log.info("done calling grpccall");
         return reply.getMessage();
     }

@@ -2,6 +2,7 @@ package com.github.balchua.temporaldemoworker.configuration;
 
 import brave.Tracing;
 import brave.grpc.GrpcTracing;
+import brave.handler.SpanHandler;
 import brave.http.HttpTracing;
 import brave.okhttp3.TracingCallFactory;
 import com.github.balchua.protos.GreeterGrpc;
@@ -30,6 +31,8 @@ import zipkin2.Span;
 import zipkin2.reporter.AsyncReporter;
 import zipkin2.reporter.Reporter;
 import zipkin2.reporter.Sender;
+import zipkin2.reporter.brave.AsyncZipkinSpanHandler;
+import zipkin2.reporter.brave.ZipkinSpanHandler;
 import zipkin2.reporter.okhttp3.OkHttpSender;
 
 import java.util.Collections;
@@ -93,8 +96,9 @@ public class AppConfiguration implements SmartInitializingSingleton {
      * Configuration for how to buffer spans into messages for Zipkin
      */
     @Bean
-    public Reporter<Span> spanReporter() {
-        return AsyncReporter.builder(sender()).build();
+    public SpanHandler spanHandler() {
+        ZipkinSpanHandler zipkinSpanHandler = AsyncZipkinSpanHandler.create(sender());
+        return zipkinSpanHandler;
     }
 
 
@@ -102,8 +106,8 @@ public class AppConfiguration implements SmartInitializingSingleton {
     @Bean Tracing tracing() {
         return Tracing.newBuilder()
                 .localServiceName(serviceName)
-                .currentTraceContext(new TestCurrentTraceContext())
-                .spanReporter(spanReporter()).build();
+                .currentTraceContext(new MDCTraceContext())
+                .addSpanHandler(spanHandler()).build();
     }
 
     // decides how to name and tag spans. By default they are named the same as the http method.
