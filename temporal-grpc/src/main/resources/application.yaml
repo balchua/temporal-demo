@@ -6,7 +6,7 @@ logging:
     console: "%d [%X{traceId}/%X{parentId}/%X{spanId}/%X{sampled}] [%thread] %-5level %logger{36} - %m%n"
   level:
     com.github.balchua: DEBUG
-    org.springframework: DEBUG
+    org.springframework: INFO
     root: INFO
 
 ## default connection pool
