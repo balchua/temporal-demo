@@ -48,7 +48,7 @@ public class TracingContextPropagator implements ContextPropagator {
         String parentId = MDC.get("parentId");
         String spanId = MDC.get("spanId");
         String sampled = MDC.get("sampled");
-        if (StringUtils.isEmpty(parentId)){
+        if (StringUtils.isEmpty(parentId)) {
             parentId = spanId;
         }
         TraceContext traceContext = new TraceContext(traceId, parentId, spanId, sampled);
@@ -57,7 +57,7 @@ public class TracingContextPropagator implements ContextPropagator {
 
     @Override
     public void setCurrentContext(Object context) {
-        TraceContext traceContext = (TraceContext)context;
+        TraceContext traceContext = (TraceContext) context;
         if (traceContext != null) {
             MDC.put("traceId", String.valueOf(traceContext.getTraceId()));
             MDC.put("parentId", String.valueOf(traceContext.getParentId()));

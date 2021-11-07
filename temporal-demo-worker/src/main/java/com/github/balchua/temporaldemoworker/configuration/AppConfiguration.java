@@ -27,9 +27,6 @@ import org.springframework.beans.factory.SmartInitializingSingleton;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import zipkin2.Span;
-import zipkin2.reporter.AsyncReporter;
-import zipkin2.reporter.Reporter;
 import zipkin2.reporter.Sender;
 import zipkin2.reporter.brave.AsyncZipkinSpanHandler;
 import zipkin2.reporter.brave.ZipkinSpanHandler;
@@ -61,10 +58,12 @@ public class AppConfiguration implements SmartInitializingSingleton {
                         WorkflowServiceStubsOptions.newBuilder().setTarget(this.temporalHost + ":" + this.temporalPort).build());
         return service;
     }
+
     @Bean
     public ContextPropagator contextPropagator() {
         return new TracingContextPropagator();
     }
+
     @Bean
     public WorkflowClient workflowClient(WorkflowServiceStubs service) {
         return WorkflowClient.newInstance(service,
@@ -102,8 +101,11 @@ public class AppConfiguration implements SmartInitializingSingleton {
     }
 
 
-    /** Controls aspects of tracing such as the service name that shows up in the UI */
-    @Bean Tracing tracing() {
+    /**
+     * Controls aspects of tracing such as the service name that shows up in the UI
+     */
+    @Bean
+    Tracing tracing() {
         return Tracing.newBuilder()
                 .localServiceName(serviceName)
                 .currentTraceContext(new MDCTraceContext())
@@ -125,12 +127,12 @@ public class AppConfiguration implements SmartInitializingSingleton {
     }
 
     @Bean
-    public Call.Factory callFactory (Tracing tracing, OkHttpClient okHttpClient) {
+    public Call.Factory callFactory(Tracing tracing, OkHttpClient okHttpClient) {
         return TracingCallFactory.create(tracing, okHttpClient);
     }
 
     @Bean
-    public OkHttpClient okhttp () {
+    public OkHttpClient okhttp() {
         return new OkHttpClient();
     }
 
@@ -149,6 +151,7 @@ public class AppConfiguration implements SmartInitializingSingleton {
     public GreeterGrpc.GreeterBlockingStub greeterBlockingStub() {
         return GreeterGrpc.newBlockingStub(managedChannel());
     }
+
     @Override
     public void afterSingletonsInstantiated() {
         factory.start();

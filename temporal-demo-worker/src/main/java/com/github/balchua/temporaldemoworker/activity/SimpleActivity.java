@@ -5,6 +5,7 @@ import io.temporal.activity.ActivityMethod;
 
 @ActivityInterface
 public interface SimpleActivity {
+
     @ActivityMethod
     String simpleAct(String name);
 
