@@ -4,12 +4,12 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
-public class Starter {
+public class GrpcStarterService {
     /**
      * Main launches the server from the command line.
      */
     public static void main(String... args) {
 
-        SpringApplication.run(Starter.class);
+        SpringApplication.run(GrpcStarterService.class);
     }
 }
