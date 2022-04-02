@@ -49,7 +49,7 @@ public class TracingContextPropagator implements ContextPropagator {
 
         if (serializedSpanContext != null) {
             var uberTraceId = serializedSpanContext.get("uber-trace-id");
-            log.debug("{}", uberTraceId);
+            log.info("{}", uberTraceId);
             var tracingContext = TraceContext.toTraceContext(uberTraceId);
             return tracingContext;
         } else {
