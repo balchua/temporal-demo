@@ -8,7 +8,8 @@ logging:
     com.github.balchua: DEBUG
     org.springframework: INFO
     root: INFO
-
+jaeger:
+  host: http://localhost:32473
 temporal:
   host: localhost
   port: 30715
@@ -17,9 +18,3 @@ temporal:
 spring:
   application:
     name: "temporal-starter"
-  zipkin:
-    base-url: "http://localhost:31941"
-  sleuth:
-    sampler:
-      rate: 50
-    trace-id128: false

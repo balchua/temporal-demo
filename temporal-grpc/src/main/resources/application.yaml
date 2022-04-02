@@ -12,5 +12,5 @@ logging:
 ## default connection pool
 spring:
   application:
-    name: tempora-demo-grpc-service
+    name: temporal-demo-grpc-service
 

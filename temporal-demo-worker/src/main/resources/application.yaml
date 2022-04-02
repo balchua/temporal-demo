@@ -1,6 +1,9 @@
 server:
   port: 8077
 
+jaeger:
+  host: http://localhost:32473
+
 logging:
   pattern:
     console: "%d [%X{traceId}/%X{spanId}] [%thread] %-5level %logger{36} - %m%n"
@@ -12,13 +15,9 @@ temporal:
     host: localhost
     port: 30715
     namespace: demo
-
+grpc-service:
+  host: localhost
+  port: 50051
 spring:
   application:
     name: "temporal-worker"
-  zipkin:
-    base-url: "http://localhost:31941"
-  sleuth:
-    sampler:
-      rate: 50
-    trace-id128: false

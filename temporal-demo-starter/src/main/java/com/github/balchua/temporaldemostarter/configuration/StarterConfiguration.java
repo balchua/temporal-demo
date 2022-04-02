@@ -40,6 +40,13 @@ public class StarterConfiguration {
     @Value("${temporal.namespace}")
     private String temporalNamespace;
 
+    @Value("${spring.application.name}")
+    private String serviceName;
+
+    @Value("${jaeger.host}")
+    private String jaegerHost;
+
+
     @Bean
     WorkflowServiceStubs workflowServiceStubs() {
         WorkflowServiceStubs service =
@@ -57,11 +64,11 @@ public class StarterConfiguration {
     public OpenTracingOptions getJaegerOpenTelemetryOptions() {
         Resource serviceNameResource =
                 Resource.create(
-                        Attributes.of(ResourceAttributes.SERVICE_NAME, "otel-starter"));
+                        Attributes.of(ResourceAttributes.SERVICE_NAME, serviceName));
 
         JaegerGrpcSpanExporter jaegerExporter =
                 JaegerGrpcSpanExporter.builder()
-                        .setEndpoint("http://localhost:32473")
+                        .setEndpoint(jaegerHost)
                         .setTimeout(1, TimeUnit.SECONDS)
                         .build();
 

@@ -23,9 +23,12 @@ JVM arguments, example
 
 ``` 
 -javaagent:/home/thor/Downloads/opentelemetry-javaagent.jar
--Dotel.traces.exporter=jaeger
--Dotel.exporter.jaeger.endpoint=http://localhost:32473
--Dotel.service.name=otel-starter
+-Dotel.javaagent.configuration-file=/home/thor/workspace/temporal-stuffs/demo/temporal-demo-starter/src/main/resources/otel-agent.properties
 ```
 
+## Run parallel test
+
+``` shell
+k6 run --vus 10 --duration 30s k6-test/test.js
+```
 
