@@ -1,10 +1,5 @@
 package com.github.balchua.temporaldemoworker.configuration;
 
-import brave.Tracing;
-import brave.grpc.GrpcTracing;
-import brave.handler.SpanHandler;
-import brave.http.HttpTracing;
-import brave.okhttp3.TracingCallFactory;
 import com.github.balchua.protos.GreeterGrpc;
 import com.github.balchua.temporaldemocommon.common.Shared;
 import com.github.balchua.temporaldemocommon.context.TracingContextPropagator;
@@ -13,9 +8,28 @@ import com.github.balchua.temporaldemoworker.activity.SimpleActivityImpl;
 import com.github.balchua.temporaldemoworker.workflow.SimpleWorkflowImpl;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
+import io.opentelemetry.api.OpenTelemetry;
+import io.opentelemetry.api.common.Attributes;
+import io.opentelemetry.api.trace.propagation.W3CTraceContextPropagator;
+import io.opentelemetry.context.propagation.ContextPropagators;
+import io.opentelemetry.context.propagation.TextMapPropagator;
+import io.opentelemetry.exporter.jaeger.JaegerGrpcSpanExporter;
+import io.opentelemetry.extension.trace.propagation.JaegerPropagator;
+import io.opentelemetry.instrumentation.grpc.v1_6.GrpcTracing;
+import io.opentelemetry.instrumentation.okhttp.v3_0.OkHttpTracing;
+import io.opentelemetry.opentracingshim.OpenTracingShim;
+import io.opentelemetry.sdk.OpenTelemetrySdk;
+import io.opentelemetry.sdk.resources.Resource;
+import io.opentelemetry.sdk.trace.SdkTracerProvider;
+import io.opentelemetry.sdk.trace.export.SimpleSpanProcessor;
+import io.opentelemetry.semconv.resource.attributes.ResourceAttributes;
 import io.temporal.client.WorkflowClient;
 import io.temporal.client.WorkflowClientOptions;
 import io.temporal.common.context.ContextPropagator;
+import io.temporal.opentracing.OpenTracingClientInterceptor;
+import io.temporal.opentracing.OpenTracingOptions;
+import io.temporal.opentracing.OpenTracingSpanContextCodec;
+import io.temporal.opentracing.OpenTracingWorkerInterceptor;
 import io.temporal.serviceclient.WorkflowServiceStubs;
 import io.temporal.serviceclient.WorkflowServiceStubsOptions;
 import io.temporal.worker.Worker;
@@ -27,12 +41,9 @@ import org.springframework.beans.factory.SmartInitializingSingleton;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import zipkin2.reporter.Sender;
-import zipkin2.reporter.brave.AsyncZipkinSpanHandler;
-import zipkin2.reporter.brave.ZipkinSpanHandler;
-import zipkin2.reporter.okhttp3.OkHttpSender;
 
 import java.util.Collections;
+import java.util.concurrent.TimeUnit;
 
 @Configuration
 public class AppConfiguration implements SmartInitializingSingleton {
@@ -65,10 +76,86 @@ public class AppConfiguration implements SmartInitializingSingleton {
     }
 
     @Bean
+    public OpenTelemetry openTelemetry() {
+        Resource serviceNameResource =
+                Resource.create(
+                        Attributes.of(ResourceAttributes.SERVICE_NAME, "otel-worker"));
+
+        JaegerGrpcSpanExporter jaegerExporter =
+                JaegerGrpcSpanExporter.builder()
+                        .setEndpoint("http://localhost:32473")
+                        .setTimeout(1, TimeUnit.SECONDS)
+                        .build();
+
+        SdkTracerProvider tracerProvider =
+                SdkTracerProvider.builder()
+                        .addSpanProcessor(SimpleSpanProcessor.create(jaegerExporter))
+                        .setResource(Resource.getDefault().merge(serviceNameResource))
+                        .build();
+
+        OpenTelemetrySdk openTelemetry =
+                OpenTelemetrySdk.builder()
+                        .setPropagators(
+                                ContextPropagators.create(
+                                        TextMapPropagator.composite(
+                                                W3CTraceContextPropagator.getInstance(), JaegerPropagator.getInstance())))
+                        .setTracerProvider(tracerProvider)
+                        .build();
+        return openTelemetry;
+    }
+
+    @Bean
+    public OpenTracingOptions getJaegerOpenTelemetryOptions() {
+        Resource serviceNameResource =
+                Resource.create(
+                        Attributes.of(ResourceAttributes.SERVICE_NAME, "otel-worker"));
+
+        JaegerGrpcSpanExporter jaegerExporter =
+                JaegerGrpcSpanExporter.builder()
+                        .setEndpoint("http://localhost:32473")
+                        .setTimeout(1, TimeUnit.SECONDS)
+                        .build();
+
+        SdkTracerProvider tracerProvider =
+                SdkTracerProvider.builder()
+                        .addSpanProcessor(SimpleSpanProcessor.create(jaegerExporter))
+                        .setResource(Resource.getDefault().merge(serviceNameResource))
+                        .build();
+
+        OpenTelemetrySdk openTelemetry =
+                OpenTelemetrySdk.builder()
+                        .setPropagators(
+                                ContextPropagators.create(
+                                        TextMapPropagator.composite(
+                                                W3CTraceContextPropagator.getInstance(), JaegerPropagator.getInstance())))
+                        .setTracerProvider(tracerProvider)
+                        .build();
+
+        OpenTracingOptions options =
+                OpenTracingOptions.newBuilder()
+                        .setSpanContextCodec(OpenTracingSpanContextCodec.TEXT_MAP_CODEC)
+                        .setTracer(OpenTracingShim.createTracerShim(openTelemetry))
+                        .build();
+        return options;
+    }
+
+    @Bean
+    public OpenTracingClientInterceptor clientInterceptor() {
+        return new OpenTracingClientInterceptor(getJaegerOpenTelemetryOptions());
+    }
+
+    @Bean
+    public OpenTracingWorkerInterceptor workerInterceptor() {
+        return new OpenTracingWorkerInterceptor(getJaegerOpenTelemetryOptions());
+    }
+
+
+    @Bean
     public WorkflowClient workflowClient(WorkflowServiceStubs service) {
         return WorkflowClient.newInstance(service,
                 WorkflowClientOptions.newBuilder()
                         .setNamespace(this.temporalNamespace)
+                        .setInterceptors(clientInterceptor())
                         .setContextPropagators(Collections.singletonList(contextPropagator()))
                         .build());
     }
@@ -82,69 +169,32 @@ public class AppConfiguration implements SmartInitializingSingleton {
     @Bean
     public WorkerFactory workerFactory(WorkflowClient client, SimpleActivity simpleActivity) {
         WorkerFactoryOptions options = WorkerFactoryOptions.newBuilder()
+                .setWorkerInterceptors(workerInterceptor())
                 .build();
         WorkerFactory factory = WorkerFactory.newInstance(client, options);
         this.factory = factory;
         Worker worker = factory.newWorker(Shared.DEMO_TASK_QUEUE);
         worker.registerWorkflowImplementationTypes(SimpleWorkflowImpl.class);
         worker.registerActivitiesImplementations(simpleActivity);
+
         return factory;
     }
 
-    /**
-     * Configuration for how to buffer spans into messages for Zipkin
-     */
-    @Bean
-    public SpanHandler spanHandler() {
-        ZipkinSpanHandler zipkinSpanHandler = AsyncZipkinSpanHandler.create(sender());
-        return zipkinSpanHandler;
-    }
-
-
-    /**
-     * Controls aspects of tracing such as the service name that shows up in the UI
-     */
-    @Bean
-    Tracing tracing() {
-        return Tracing.newBuilder()
-                .localServiceName(serviceName)
-                .currentTraceContext(new MDCTraceContext())
-                .addSpanHandler(spanHandler()).build();
-    }
-
-    // decides how to name and tag spans. By default they are named the same as the http method.
-    @Bean
-    public HttpTracing httpTracing(Tracing tracing) {
-        return HttpTracing.create(tracing);
-    }
-
-    /**
-     * Configuration for how to send spans to Zipkin
-     */
-    @Bean
-    public Sender sender() {
-        return OkHttpSender.create("http://localhost:31941/api/v2/spans");
-    }
-
-    @Bean
-    public Call.Factory callFactory(Tracing tracing, OkHttpClient okHttpClient) {
-        return TracingCallFactory.create(tracing, okHttpClient);
-    }
-
-    @Bean
-    public OkHttpClient okhttp() {
+    private OkHttpClient okhttp() {
         return new OkHttpClient();
     }
 
     @Bean
-    public ManagedChannel managedChannel() {
-        return ManagedChannelBuilder.forAddress("localhost", 50051).intercept(grpcTracing().newClientInterceptor())
-                .usePlaintext().build();
+    public Call.Factory createTracedClient(OpenTelemetry openTelemetry) {
+        return OkHttpTracing.builder(openTelemetry).build().newCallFactory(okhttp());
     }
 
+
     @Bean
-    public GrpcTracing grpcTracing() {
-        return GrpcTracing.create(tracing());
+    public ManagedChannel managedChannel() {
+        return ManagedChannelBuilder.forAddress("localhost", 50051)
+                .intercept(GrpcTracing.create(openTelemetry()).newClientInterceptor())
+                .usePlaintext().build();
     }
 
     @Bean

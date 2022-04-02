@@ -12,11 +12,16 @@
         <maven.compiler.source>11</maven.compiler.source>
         <maven.compiler.target>11</maven.compiler.target>
         <logback.version>1.2.5</logback.version>
-        <temporal.version>1.4.0</temporal.version>
+        <temporal.version>1.8.1</temporal.version>
         <commons-configuration.version>1.10</commons-configuration.version>
     </properties>
 
     <dependencies>
+        <dependency>
+            <groupId>com.google.protobuf</groupId>
+            <artifactId>protobuf-java-util</artifactId>
+            <version>3.19.4</version>
+        </dependency>
         <dependency>
             <groupId>io.temporal</groupId>
             <artifactId>temporal-sdk</artifactId>
@@ -31,24 +36,6 @@
             <groupId>commons-configuration</groupId>
             <artifactId>commons-configuration</artifactId>
             <version>${commons-configuration.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>io.temporal</groupId>
-            <artifactId>temporal-testing</artifactId>
-            <version>${temporal.version}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>io.temporal</groupId>
-            <artifactId>temporal-testing-junit4</artifactId>
-            <version>${temporal.version}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>io.temporal</groupId>
-            <artifactId>temporal-testing-junit5</artifactId>
-            <version>${temporal.version}</version>
-            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>

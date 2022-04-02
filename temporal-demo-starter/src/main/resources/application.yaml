@@ -3,7 +3,7 @@ server:
 
 logging:
   pattern:
-    console: "%d [%X{traceId}/%X{parentId}/%X{spanId}/%X{sampled}] [%thread] %-5level %logger{36} - %m%n"
+    console: "%d [%X{trace_id}/%X{span_id}] [%thread] %-5level %logger{36} - %m%n"
   level:
     com.github.balchua: DEBUG
     org.springframework: INFO
@@ -11,7 +11,7 @@ logging:
 
 temporal:
   host: localhost
-  port: 31233
+  port: 30715
   namespace: demo
 
 spring:

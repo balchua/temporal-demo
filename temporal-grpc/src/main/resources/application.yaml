@@ -3,7 +3,7 @@ grpc:
 
 logging:
   pattern:
-    console: "%d [%X{traceId}/%X{parentId}/%X{spanId}/%X{sampled}] [%thread] %-5level %logger{36} - %m%n"
+    console: "%d [%X{trace_id}/%X{span_id}] [%thread] %-5level %logger{36} - %m%n"
   level:
     com.github.balchua: DEBUG
     org.springframework: INFO
@@ -13,10 +13,4 @@ logging:
 spring:
   application:
     name: tempora-demo-grpc-service
-  zipkin:
-    base-url: "http://localhost:31941"
-  sleuth:
-    sampler:
-      rate: 50
-    trace-id128: false
 
