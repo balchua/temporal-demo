@@ -5,8 +5,6 @@ import io.temporal.api.common.v1.Payload;
 import io.temporal.common.context.ContextPropagator;
 import io.temporal.common.converter.DataConverter;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang.StringUtils;
-import org.slf4j.MDC;
 
 import java.lang.reflect.Type;
 import java.util.Collections;
@@ -50,13 +48,9 @@ public class TracingContextPropagator implements ContextPropagator {
                         .fromPayload(payload, HashMap.class, HASH_MAP_STRING_STRING_TYPE);
 
         if (serializedSpanContext != null) {
-            log.info("{}", serializedSpanContext.get("uber-trace-id"));
-            TraceContext tracingContext = new TraceContext();
-            String[] traceContextInStr = serializedSpanContext.get("uber-trace-id").split(":");
-            tracingContext.setTraceId(traceContextInStr[0]);
-            tracingContext.setSpanId(traceContextInStr[1]);
-            tracingContext.setParentId(traceContextInStr[2]);
-            tracingContext.setSampled(traceContextInStr[3]);
+            var uberTraceId = serializedSpanContext.get("uber-trace-id");
+            log.debug("{}", uberTraceId);
+            var tracingContext = TraceContext.toTraceContext(uberTraceId);
             return tracingContext;
         } else {
             return null;
@@ -65,25 +59,14 @@ public class TracingContextPropagator implements ContextPropagator {
 
     @Override
     public Object getCurrentContext() {
-        String traceId = MDC.get("traceId");
-        String parentId = MDC.get("parentId");
-        String spanId = MDC.get("spanId");
-        String sampled = MDC.get("sampled");
-        if (StringUtils.isEmpty(parentId)) {
-            parentId = spanId;
-        }
-        TraceContext traceContext = new TraceContext(traceId, parentId, spanId, sampled);
-        return traceContext;
+        return TraceContext.fromMDC();
     }
 
     @Override
     public void setCurrentContext(Object context) {
         TraceContext traceContext = (TraceContext) context;
         if (traceContext != null) {
-            MDC.put("traceId", String.valueOf(traceContext.getTraceId()));
-            MDC.put("parentId", String.valueOf(traceContext.getParentId()));
-            MDC.put("spanId", String.valueOf(traceContext.getSpanId()));
-            MDC.put("sampled", String.valueOf(traceContext.getSampled()));
+            traceContext.populateMDC();
         }
     }
 }

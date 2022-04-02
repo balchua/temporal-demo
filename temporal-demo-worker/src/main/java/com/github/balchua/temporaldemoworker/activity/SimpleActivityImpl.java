@@ -3,6 +3,7 @@ package com.github.balchua.temporaldemoworker.activity;
 import com.github.balchua.protos.GreeterGrpc;
 import com.github.balchua.protos.HelloReply;
 import com.github.balchua.protos.HelloRequest;
+import com.github.balchua.temporaldemocommon.context.TraceContext;
 import io.opentelemetry.api.OpenTelemetry;
 import io.opentelemetry.api.trace.*;
 import io.opentelemetry.context.Context;
@@ -45,12 +46,12 @@ public class SimpleActivityImpl implements SimpleActivity {
     public String simpleAct(String name) {
         var tracer = otel.getTracer("simple-activity");
         log.info("This is doing something simple.");
-
+        var traceContext = TraceContext.fromMDC();
         byte sampled = 1;
         SpanContext parentContext =
                 SpanContext.createFromRemoteParent(
-                        TraceId.fromBytes(MDC.get("traceId").getBytes(StandardCharsets.UTF_8)),
-                        SpanId.fromBytes(MDC.get("spanId").getBytes(StandardCharsets.UTF_8)),
+                        TraceId.fromBytes(traceContext.getTraceId().getBytes(StandardCharsets.UTF_8)),
+                        SpanId.fromBytes(traceContext.getSpanId().getBytes(StandardCharsets.UTF_8)),
                         TraceFlags.fromByte(sampled),
                         TraceState.builder().build());
 
@@ -77,10 +78,11 @@ public class SimpleActivityImpl implements SimpleActivity {
         String response = "";
         byte sampled = 1;
 
+        var traceContext = TraceContext.fromMDC();
         SpanContext parentContext =
                 SpanContext.createFromRemoteParent(
-                        TraceId.fromBytes(MDC.get("traceId").getBytes(StandardCharsets.UTF_8)),
-                        SpanId.fromBytes(MDC.get("spanId").getBytes(StandardCharsets.UTF_8)),
+                        TraceId.fromBytes(traceContext.getTraceId().getBytes(StandardCharsets.UTF_8)),
+                        SpanId.fromBytes(traceContext.getSpanId().getBytes(StandardCharsets.UTF_8)),
                         TraceFlags.fromByte(sampled),
                         TraceState.builder().build());
 
