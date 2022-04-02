@@ -9,10 +9,12 @@ import io.opentelemetry.api.OpenTelemetry;
 import io.opentelemetry.api.trace.*;
 import io.opentelemetry.context.Context;
 import io.opentelemetry.context.Scope;
+import io.temporal.activity.Activity;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.*;
 import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
@@ -22,18 +24,21 @@ import java.nio.charset.StandardCharsets;
 @Component
 public class SimpleActivityImpl implements SimpleActivity {
 
+    @Value("${sink-service.host}")
+    private String sinkServiceHost;
+
+    @Value("${sink-service.port}")
+    private int sinkServicePort;
+
     @Autowired
     private Call.Factory callFactory;
 
     @Autowired
     private GreeterGrpc.GreeterBlockingStub blockingStub;
 
-
-
-    private static final String BASE_URL = "http://localhost:8099/sink/api/v1/";
-
     private Request setupRequest() {
-        HttpUrl.Builder urlBuilder = HttpUrl.parse(BASE_URL + "/finalAction").newBuilder();
+        var sinkService = "http://" + sinkServiceHost + ":" + sinkServicePort + "/sink/api/v1/finalAction";
+        HttpUrl.Builder urlBuilder = HttpUrl.parse(sinkService).newBuilder();
         String url = urlBuilder.build().toString();
         Request.Builder builder = new Request.Builder()
                 .url(url);
@@ -51,8 +56,8 @@ public class SimpleActivityImpl implements SimpleActivity {
             return response.body().string();
         } catch (IOException e) {
             log.error("Unable to access sink endpoint {}", e);
+            throw Activity.wrap(e);
         }
-        return "response not ok";
     }
 
     @Override

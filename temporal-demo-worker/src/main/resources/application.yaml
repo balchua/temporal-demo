@@ -18,6 +18,9 @@ temporal:
 grpc-service:
   host: localhost
   port: 50051
+sink-service:
+  host: localhost
+  port: 8099
 spring:
   application:
     name: "temporal-worker"
