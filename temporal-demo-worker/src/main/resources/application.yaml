@@ -8,7 +8,7 @@ logging:
   pattern:
     console: "%d [%X{traceId}/%X{spanId}] [%thread] %-5level %logger{36} - %m%n"
   level:
-    com.github.balchua: DEBUG
+    com.github.balchua: INFO
     org.springframework: INFO
     root: INFO
 temporal:

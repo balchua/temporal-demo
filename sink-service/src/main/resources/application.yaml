@@ -1,3 +1,4 @@
+delay: 1
 server:
   port: 8099
 

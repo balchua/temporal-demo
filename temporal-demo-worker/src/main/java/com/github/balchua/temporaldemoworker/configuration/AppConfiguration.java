@@ -35,6 +35,7 @@ import io.temporal.serviceclient.WorkflowServiceStubsOptions;
 import io.temporal.worker.Worker;
 import io.temporal.worker.WorkerFactory;
 import io.temporal.worker.WorkerFactoryOptions;
+import io.temporal.worker.WorkerOptions;
 import okhttp3.Call;
 import okhttp3.OkHttpClient;
 import org.springframework.beans.factory.SmartInitializingSingleton;
@@ -158,9 +159,12 @@ public class AppConfiguration implements SmartInitializingSingleton {
                 .build();
         WorkerFactory factory = WorkerFactory.newInstance(client, options);
         this.factory = factory;
-        Worker worker = factory.newWorker(Shared.DEMO_TASK_QUEUE);
+        WorkerOptions workerOptions = WorkerOptions.newBuilder()
+                .build();
+        Worker worker = factory.newWorker(Shared.DEMO_TASK_QUEUE, workerOptions);
         worker.registerWorkflowImplementationTypes(SimpleWorkflowImpl.class);
         worker.registerActivitiesImplementations(simpleActivity);
+
 
         return factory;
     }
