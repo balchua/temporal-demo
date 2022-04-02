@@ -15,6 +15,15 @@ public class SinkController {
     public String finalAction() {
         log.info("calling the final Action");
 
+        sleep(150);
         return "finalAction done";
+    }
+
+    private void sleep(int duration) {
+        try {
+            Thread.sleep(duration);
+        } catch (InterruptedException e) {
+            log.warn("Nothing to worry about");
+        }
     }
 }
