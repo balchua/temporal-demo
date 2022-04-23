@@ -9,7 +9,7 @@ logging:
     org.springframework: INFO
     root: INFO
 jaeger:
-  host: http://localhost:32473
+  host: http://10.152.183.235:14250
 temporal:
   host: localhost
   port: 30715

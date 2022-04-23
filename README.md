@@ -1,3 +1,13 @@
+# Temporal Demo
+
+This repository is a demonstration of how to use Temporal using JavaSDK and Go SDK.
+The `Document` workflow has 3 flows:
+* Creation
+* Submission
+* Validation
+* Closing
+
+M
 ## Install temporal
 
 **Dont use this in production**

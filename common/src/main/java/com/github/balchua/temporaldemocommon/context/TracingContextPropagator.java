@@ -12,6 +12,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 @Slf4j
+@Deprecated
 public class TracingContextPropagator implements ContextPropagator {
 
     private static final String TRACING_KEY = "tracingContext";

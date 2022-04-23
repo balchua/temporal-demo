@@ -2,7 +2,7 @@ package com.github.balchua.temporaldemoworker.configuration;
 
 import com.github.balchua.protos.GreeterGrpc;
 import com.github.balchua.temporaldemocommon.common.Shared;
-import com.github.balchua.temporaldemocommon.context.TracingContextPropagator;
+import com.github.balchua.temporaldemocommon.interceptor.SimpleInterceptor;
 import com.github.balchua.temporaldemoworker.activity.SimpleActivity;
 import com.github.balchua.temporaldemoworker.activity.SimpleActivityImpl;
 import com.github.balchua.temporaldemoworker.workflow.SimpleWorkflowImpl;
@@ -25,7 +25,6 @@ import io.opentelemetry.sdk.trace.export.SimpleSpanProcessor;
 import io.opentelemetry.semconv.resource.attributes.ResourceAttributes;
 import io.temporal.client.WorkflowClient;
 import io.temporal.client.WorkflowClientOptions;
-import io.temporal.common.context.ContextPropagator;
 import io.temporal.opentracing.OpenTracingClientInterceptor;
 import io.temporal.opentracing.OpenTracingOptions;
 import io.temporal.opentracing.OpenTracingSpanContextCodec;
@@ -43,7 +42,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import java.util.Collections;
 import java.util.concurrent.TimeUnit;
 
 @Configuration
@@ -78,11 +76,6 @@ public class AppConfiguration implements SmartInitializingSingleton {
                 WorkflowServiceStubs.newInstance(
                         WorkflowServiceStubsOptions.newBuilder().setTarget(this.temporalHost + ":" + this.temporalPort).build());
         return service;
-    }
-
-    @Bean
-    public ContextPropagator contextPropagator() {
-        return new TracingContextPropagator();
     }
 
     @Bean
@@ -142,7 +135,7 @@ public class AppConfiguration implements SmartInitializingSingleton {
                 WorkflowClientOptions.newBuilder()
                         .setNamespace(this.temporalNamespace)
                         .setInterceptors(clientInterceptor())
-                        .setContextPropagators(Collections.singletonList(contextPropagator()))
+                        //.setContextPropagators(Collections.singletonList(contextPropagator()))
                         .build());
     }
 
@@ -151,11 +144,15 @@ public class AppConfiguration implements SmartInitializingSingleton {
         return new SimpleActivityImpl();
     }
 
+    @Bean
+    public SimpleInterceptor simpleInterceptor() {
+        return new SimpleInterceptor();
+    }
 
     @Bean
     public WorkerFactory workerFactory(WorkflowClient client, SimpleActivity simpleActivity) {
         WorkerFactoryOptions options = WorkerFactoryOptions.newBuilder()
-                .setWorkerInterceptors(workerInterceptor())
+                .setWorkerInterceptors(workerInterceptor(), simpleInterceptor())
                 .build();
         WorkerFactory factory = WorkerFactory.newInstance(client, options);
         this.factory = factory;

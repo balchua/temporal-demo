@@ -2,7 +2,7 @@ server:
   port: 8077
 
 jaeger:
-  host: http://localhost:32473
+  host: http://10.152.183.235:14250
 
 logging:
   pattern:

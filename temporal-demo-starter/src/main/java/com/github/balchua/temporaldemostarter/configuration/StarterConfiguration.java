@@ -1,6 +1,6 @@
 package com.github.balchua.temporaldemostarter.configuration;
 
-import com.github.balchua.temporaldemocommon.context.TracingContextPropagator;
+import com.github.balchua.temporaldemocommon.interceptor.SimpleInterceptor;
 import io.opentelemetry.api.common.Attributes;
 import io.opentelemetry.api.trace.propagation.W3CTraceContextPropagator;
 import io.opentelemetry.context.propagation.ContextPropagators;
@@ -15,7 +15,6 @@ import io.opentelemetry.sdk.trace.export.SimpleSpanProcessor;
 import io.opentelemetry.semconv.resource.attributes.ResourceAttributes;
 import io.temporal.client.WorkflowClient;
 import io.temporal.client.WorkflowClientOptions;
-import io.temporal.common.context.ContextPropagator;
 import io.temporal.opentracing.OpenTracingClientInterceptor;
 import io.temporal.opentracing.OpenTracingOptions;
 import io.temporal.opentracing.OpenTracingSpanContextCodec;
@@ -25,7 +24,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import java.util.Collections;
 import java.util.concurrent.TimeUnit;
 
 @Configuration
@@ -53,11 +51,6 @@ public class StarterConfiguration {
                 WorkflowServiceStubs.newInstance(
                         WorkflowServiceStubsOptions.newBuilder().setTarget(this.temporalHost + ":" + this.temporalPort).build());
         return service;
-    }
-
-    @Bean
-    public ContextPropagator contextPropagator() {
-        return new TracingContextPropagator();
     }
 
     @Bean
@@ -99,14 +92,16 @@ public class StarterConfiguration {
     public OpenTracingClientInterceptor clientInterceptor() {
         return new OpenTracingClientInterceptor(getJaegerOpenTelemetryOptions());
     }
-
+    @Bean
+    public SimpleInterceptor simpleInterceptor() {
+        return new SimpleInterceptor();
+    }
     @Bean
     public WorkflowClient workflowClient(WorkflowServiceStubs service) {
         return WorkflowClient.newInstance(service,
                 WorkflowClientOptions.newBuilder()
                         .setNamespace(this.temporalNamespace)
                         .setInterceptors(clientInterceptor())
-                        .setContextPropagators(Collections.singletonList(contextPropagator()))
                         .build());
     }
 
